@@ -1,4 +1,33 @@
-import Graphics.UI.GLUT 
+import Data.Array
+import Graphics.UI.GLUT
+
+width = 2
+height = 2
+
+data GameBoard = GameBoard (Array (Int, Int) Bool)
+
+arrayChange f (GameBoard a) = GameBoard $ f a
+
+setTile x y = arrayChange (// [((x,y), True)])
+
+instance Show GameBoard where
+  show (GameBoard a) = init $ concatMap (\y -> (map (\x -> head $ show $ a ! (x,height-y)) [0..w])++"\n") [0..h]
+    where ((0,0),(w,h)) = bounds a
+
+emptyBoard = GameBoard $ listArray ((0,0),(width,height)) $ repeat False
+
+displayBoard :: GameBoard -> IO ()
+displayBoard (GameBoard a) = foldl1 (>>) [displayTile x y | x <- [0..w], y <- [0..h], a ! (x,y)]
+  where ((0,0),(w,h)) = bounds a
+
+displayTile :: Int -> Int -> IO ()
+displayTile nx ny = renderPrimitive Quads $ do
+  let x = realToFrac nx
+      y = realToFrac ny
+  vertex3f x y 0
+  vertex3f x (y+1) 0
+  vertex3f (x+1) (y+1) 0
+  vertex3f (x+1) y 0
 
 main :: IO ()
 main = do
@@ -6,34 +35,12 @@ main = do
   _window <- createWindow "Hello World"
   displayCallback $= display
   mainLoop
- 
+
+color3f r g b = color $ Color3 r g (b :: GLfloat)
+vertex3f x y z = vertex $ Vertex3 x y (z :: GLfloat)
+
 display :: DisplayCallback
 display = do
-  let color3f r g b = color $ Color3 r g (b :: GLfloat)
-      vertex3f x y z = vertex $ Vertex3 x y (z :: GLfloat)
   clear [ColorBuffer]
-  renderPrimitive Quads $ do
-    color3f 1 0 0
-    vertex3f 0 0 0
-    vertex3f 0 0.2 0
-    vertex3f 0.2 0.2 0
-    vertex3f 0.2 0 0
- 
-    color3f 0 1 0
-    vertex3f 0 0 0
-    vertex3f 0 (-0.2) 0
-    vertex3f 0.2 (-0.2) 0
-    vertex3f 0.2 0 0
- 
-    color3f 0 0 1
-    vertex3f 0 0 0
-    vertex3f 0 (-0.2) 0
-    vertex3f (-0.2) (-0.2) 0
-    vertex3f (-0.2) 0 0
- 
-    color3f 1 0 1
-    vertex3f 0 0 0
-    vertex3f 0 0.2 0
-    vertex3f (-0.2) 0.2 0
-    vertex3f (-0.2) 0 0
+  displayBoard $ setTile 0 0 emptyBoard
   flush
