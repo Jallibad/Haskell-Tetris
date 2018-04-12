@@ -11,10 +11,13 @@ arrayChange f (GameBoard a) = GameBoard $ f a
 setTile x y = arrayChange (// [((x,y), True)])
 
 instance Show GameBoard where
-  show (GameBoard a) = init $ concatMap (\y -> (map (\x -> head $ show $ a ! (x,height-y)) [0..w])++"\n") [0..h]
+  show (GameBoard a) = init $ concatMap (\y -> (map (\x -> head $ show $ a ! (x,height-y-1)) [0..w])++"\n") [0..h]
     where ((0,0),(w,h)) = bounds a
 
-emptyBoard = GameBoard $ listArray ((0,0),(width,height)) $ repeat False
+emptyBoard = GameBoard $ listArray ((0,0),(width-1,height-1)) $ repeat False
+
+fullLines (GameBoard a) = [y | y <- [0..h], all (\x -> a ! (x,y)) [0..w]]
+  where ((0,0),(w,h)) = bounds a
 
 displayBoard :: GameBoard -> IO ()
 displayBoard (GameBoard a) = foldl1 (>>) [displayTile x y | x <- [0..w], y <- [0..h], a ! (x,y)]
